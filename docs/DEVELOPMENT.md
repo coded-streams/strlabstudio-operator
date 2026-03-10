@@ -61,8 +61,8 @@ flinksql-kube-operator/
 │   └── samples/                             # Example CRs
 ├── helm/flinksql-operator/                  # Helm chart
 └── docs/
-    ├── DEVELOPMENT.md                       # This file
-    ├── CRD_REFERENCE.md                     # Full CRD spec
+    ├── DEVELOPMENT.md                       
+    ├── CRD_REFERENCE.md                     
     ├── STORAGE.md                           # PVC / storage guide
     └── HOSTING.md                           # Helm chart hosting guide
 ```
