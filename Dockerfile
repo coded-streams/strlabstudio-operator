@@ -16,7 +16,7 @@ COPY api/ api/
 COPY controllers/ controllers/
 
 # Run as non-root
-RUN useradd -u 65534 -r operator
+RUN useradd -u 65534 -r -M -g operator operator 2>/dev/null || true
 USER 65534
 
 ENTRYPOINT ["kopf", "run", "/app/controllers/flinksqlstudio_controller.py", "--all-namespaces"]
