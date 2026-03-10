@@ -1,0 +1,18 @@
+# examples/basic-instance.yaml
+# Minimal FlinkSQLStudio — apply after operator is installed
+# kubectl apply -f examples/basic-instance.yaml
+apiVersion: codedstreams.io/v1alpha1
+kind: FlinkSQLStudio
+metadata:
+  name: dev
+  namespace: default
+spec:
+  gateway:
+    host: flink-sql-gateway.flink.svc.cluster.local
+    port: 8083
+  jobmanager:
+    host: flink-jobmanager.flink.svc.cluster.local
+    port: 8081
+  service:
+    type: ClusterIP
+    port: 80

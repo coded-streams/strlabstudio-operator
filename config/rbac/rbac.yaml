@@ -1,0 +1,51 @@
+---
+# config/rbac/rbac.yaml
+# Apply after CRD:  kubectl apply -f config/rbac/rbac.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: flinksql-system
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flinksqlstudio-operator
+  namespace: flinksql-system
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flinksqlstudio-operator
+rules:
+  # Manage FlinkSQLStudio CRs and their status
+  - apiGroups: ["codedstreams.io"]
+    resources: ["flinksqlstudios", "flinksqlstudios/status", "flinksqlstudios/finalizers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Manage Deployments
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Manage Services and ConfigMaps
+  - apiGroups: [""]
+    resources: ["services", "configmaps"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Post Events for observability
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flinksqlstudio-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: flinksqlstudio-operator
+subjects:
+  - kind: ServiceAccount
+    name: flinksqlstudio-operator
+    namespace: flinksql-system

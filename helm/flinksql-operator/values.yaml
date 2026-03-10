@@ -1,0 +1,18 @@
+image:
+  repository: codedstreams/flinksql-kube-operator
+  tag: latest
+  pullPolicy: Always
+
+# Namespace the operator runs in
+operatorNamespace: flinksql-system
+
+# Install CRD as part of the Helm release (set false if managing CRDs separately)
+installCRD: true
+
+resources:
+  requests:
+    cpu:    "50m"
+    memory: "96Mi"
+  limits:
+    cpu:    "250m"
+    memory: "256Mi"

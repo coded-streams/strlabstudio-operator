@@ -1,0 +1,105 @@
+{{- if .Values.installCRD }}
+---
+# CRD is templated here for Helm lifecycle management
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: flinksqlstudios.codedstreams.io
+  annotations:
+    helm.sh/resource-policy: keep   # preserve CRD on helm uninstall
+spec:
+  group: codedstreams.io
+  scope: Namespaced
+  names:
+    plural: flinksqlstudios
+    singular: flinksqlstudio
+    kind: FlinkSQLStudio
+    shortNames: [fss]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            spec:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
+{{- end }}
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .Values.operatorNamespace }}
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: flinksqlstudio-operator
+  namespace: {{ .Values.operatorNamespace }}
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: flinksqlstudio-operator
+rules:
+  - apiGroups: ["codedstreams.io"]
+    resources: ["flinksqlstudios", "flinksqlstudios/status", "flinksqlstudios/finalizers"]
+    verbs: ["*"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["*"]
+  - apiGroups: [""]
+    resources: ["services", "configmaps", "events"]
+    verbs: ["*"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: flinksqlstudio-operator
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: flinksqlstudio-operator
+subjects:
+  - kind: ServiceAccount
+    name: flinksqlstudio-operator
+    namespace: {{ .Values.operatorNamespace }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flinksqlstudio-operator
+  namespace: {{ .Values.operatorNamespace }}
+  labels:
+    app: flinksqlstudio-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flinksqlstudio-operator
+  template:
+    metadata:
+      labels:
+        app: flinksqlstudio-operator
+    spec:
+      serviceAccountName: flinksqlstudio-operator
+      containers:
+        - name: operator
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["kopf", "run", "/app/controllers/flinksqlstudio_controller.py", "--all-namespaces"]
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}

@@ -1,0 +1,106 @@
+---
+# config/crd/flinksqlstudios.yaml
+# Apply once to your cluster:  kubectl apply -f config/crd/flinksqlstudios.yaml
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: flinksqlstudios.codedstreams.io
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.14.0
+spec:
+  group: codedstreams.io
+  scope: Namespaced
+  names:
+    plural:     flinksqlstudios
+    singular:   flinksqlstudio
+    kind:       FlinkSQLStudio
+    shortNames: [fss]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      subresources:
+        status: {}
+      additionalPrinterColumns:
+        - name: Ready
+          type: string
+          jsonPath: .status.conditions[?(@.type=='Ready')].status
+        - name: Gateway
+          type: string
+          jsonPath: .spec.gateway.host
+        - name: Replicas
+          type: integer
+          jsonPath: .spec.replicas
+        - name: Age
+          type: date
+          jsonPath: .metadata.creationTimestamp
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: [spec]
+          properties:
+            spec:
+              type: object
+              required: [gateway]
+              properties:
+                image:
+                  type: string
+                  default: "codedstreams/flinksql-studio:latest"
+                  description: "Docker image for the FlinkSQL Studio IDE"
+                replicas:
+                  type: integer
+                  default: 1
+                  minimum: 1
+                  maximum: 10
+                gateway:
+                  type: object
+                  required: [host]
+                  properties:
+                    host:
+                      type: string
+                      description: "Flink SQL Gateway hostname or IP"
+                    port:
+                      type: integer
+                      default: 8083
+                      minimum: 1
+                      maximum: 65535
+                jobmanager:
+                  type: object
+                  properties:
+                    host:
+                      type: string
+                      default: "localhost"
+                    port:
+                      type: integer
+                      default: 8081
+                service:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [ClusterIP, NodePort, LoadBalancer]
+                      default: ClusterIP
+                    port:
+                      type: integer
+                      default: 80
+                    nodePort:
+                      type: integer
+                      minimum: 30000
+                      maximum: 32767
+                resources:
+                  type: object
+                  properties:
+                    requests:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                    limits:
+                      type: object
+                      x-kubernetes-preserve-unknown-fields: true
+                extraEnv:
+                  type: array
+                  items:
+                    type: object
+                    x-kubernetes-preserve-unknown-fields: true
+            status:
+              type: object
+              x-kubernetes-preserve-unknown-fields: true
