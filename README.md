@@ -215,7 +215,7 @@ kubectl port-forward svc/strlab-studio-dev 3030:80 -n default
 
 ## Changelog
 
-### v1.1 (current)
+### v1.2 (current)
 - Renamed from FlinkSQL Studio Kube Operator to **Str:::lab Studio Kube Operator**
 - CRD kind renamed `FlinkSQLStudio` → `StrlabStudio`, plural `flinksqlstudios` → `strlabstudios`
 - Short name changed from `fss` → `sls`
