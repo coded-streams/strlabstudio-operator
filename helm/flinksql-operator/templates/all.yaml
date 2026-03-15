@@ -4,17 +4,17 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: flinksqlstudios.codedstreams.io
+  name: strlabstudios.codedstreams.io
   annotations:
     helm.sh/resource-policy: keep   # preserve CRD on helm uninstall
 spec:
   group: codedstreams.io
   scope: Namespaced
   names:
-    plural: flinksqlstudios
-    singular: flinksqlstudio
-    kind: FlinkSQLStudio
-    shortNames: [fss]
+    plural:     strlabstudios
+    singular:   strlabstudio
+    kind:       StrlabStudio
+    shortNames: [sls]
   versions:
     - name: v1alpha1
       served: true
@@ -44,17 +44,17 @@ metadata:
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
   namespace: {{ .Values.operatorNamespace }}
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
 rules:
   - apiGroups: ["codedstreams.io"]
-    resources: ["flinksqlstudios", "flinksqlstudios/status", "flinksqlstudios/finalizers"]
+    resources: ["strlabstudios", "strlabstudios/status", "strlabstudios/finalizers"]
     verbs: ["*"]
   - apiGroups: ["apps"]
     resources: ["deployments"]
@@ -67,39 +67,39 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
 subjects:
   - kind: ServiceAccount
-    name: flinksqlstudio-operator
+    name: strlabstudio-operator
     namespace: {{ .Values.operatorNamespace }}
 
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
   namespace: {{ .Values.operatorNamespace }}
   labels:
-    app: flinksqlstudio-operator
+    app: strlabstudio-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: flinksqlstudio-operator
+      app: strlabstudio-operator
   template:
     metadata:
       labels:
-        app: flinksqlstudio-operator
+        app: strlabstudio-operator
     spec:
-      serviceAccountName: flinksqlstudio-operator
+      serviceAccountName: strlabstudio-operator
       containers:
         - name: operator
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["kopf", "run", "/app/controllers/flinksqlstudio_controller.py", "--all-namespaces"]
+          command: ["kopf", "run", "/app/controllers/strlabstudio_controller.py", "--all-namespaces"]
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

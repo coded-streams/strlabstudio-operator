@@ -1,8 +1,8 @@
 FROM python:3.11-slim
 
-LABEL org.opencontainers.image.title="FlinkSQL Studio Kubernetes Operator"
+LABEL org.opencontainers.image.title="Str:::lab Studio Kubernetes Operator"
 LABEL org.opencontainers.image.authors="Nestor A. A <nestorabiawuh@gmail.com>"
-LABEL org.opencontainers.image.source="https://github.com/coded-streams/flinksql-kube-operator"
+LABEL org.opencontainers.image.source="https://github.com/coded-streams/strlab-kube-operator"
 LABEL org.opencontainers.image.licenses="Apache-2.0"
 
 WORKDIR /app
@@ -19,4 +19,4 @@ COPY controllers/ controllers/
 RUN useradd -u 65534 -r -M -g operator operator 2>/dev/null || true
 USER 65534
 
-ENTRYPOINT ["kopf", "run", "/app/controllers/flinksqlstudio_controller.py", "--all-namespaces"]
+ENTRYPOINT ["kopf", "run", "/app/controllers/strlabstudio_controller.py", "--all-namespaces"]

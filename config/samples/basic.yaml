@@ -1,8 +1,8 @@
 ---
-# config/samples/basic.yaml — Minimal FlinkSQLStudio CR
+# config/samples/basic.yaml — Minimal StrlabStudio CR
 # kubectl apply -f config/samples/basic.yaml
 apiVersion: codedstreams.io/v1alpha1
-kind: FlinkSQLStudio
+kind: StrlabStudio
 metadata:
   name: dev
   namespace: default

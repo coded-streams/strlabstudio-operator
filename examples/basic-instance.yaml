@@ -1,8 +1,8 @@
 # examples/basic-instance.yaml
-# Minimal FlinkSQLStudio — apply after operator is installed
+# Minimal StrlabStudio — apply after operator is installed
 # kubectl apply -f examples/basic-instance.yaml
 apiVersion: codedstreams.io/v1alpha1
-kind: FlinkSQLStudio
+kind: StrlabStudio
 metadata:
   name: dev
   namespace: default

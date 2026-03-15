@@ -4,24 +4,24 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: flinksql-system
+  name: strlab-system
 
 ---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: flinksqlstudio-operator
-  namespace: flinksql-system
+  name: strlabstudio-operator
+  namespace: strlab-system
 
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
 rules:
-  # Manage FlinkSQLStudio CRs and their status
+  # Manage StrlabStudio CRs and their status
   - apiGroups: ["codedstreams.io"]
-    resources: ["flinksqlstudios", "flinksqlstudios/status", "flinksqlstudios/finalizers"]
+    resources: ["strlabstudios", "strlabstudios/status", "strlabstudios/finalizers"]
     verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
   # Manage Deployments
   - apiGroups: ["apps"]
@@ -40,12 +40,12 @@ rules:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: flinksqlstudio-operator
+  name: strlabstudio-operator
 subjects:
   - kind: ServiceAccount
-    name: flinksqlstudio-operator
-    namespace: flinksql-system
+    name: strlabstudio-operator
+    namespace: strlab-system

@@ -1,5 +1,5 @@
 """
-api/v1alpha1/types.py — FlinkSQLStudio CRD schema definitions.
+api/v1alpha1/types.py — StrlabStudio CRD schema definitions.
 
 These Python dataclasses mirror the YAML spec and are used by the
 controller for validation and default-filling.
@@ -35,9 +35,9 @@ class ResourceSpec:
 
 
 @dataclass
-class FlinkSQLStudioSpec:
+class StrlabStudioSpec:
     gateway:    GatewaySpec
-    image:      str         = "codedstreams/flinksql-studio:latest"
+    image:      str         = "codedstreams/strlabstudio:latest"
     replicas:   int         = 1
     jobmanager: JobManagerSpec = field(default_factory=JobManagerSpec)
     service:    ServiceSpec    = field(default_factory=ServiceSpec)
@@ -45,10 +45,10 @@ class FlinkSQLStudioSpec:
     extraEnv:   list[dict[str, Any]] = field(default_factory=list)
 
 
-def parse_spec(raw: dict) -> FlinkSQLStudioSpec:
-    """Parse the raw spec dict from a CR into a typed FlinkSQLStudioSpec."""
-    gw_raw = raw.get("gateway", {})
-    jm_raw = raw.get("jobmanager", {})
+def parse_spec(raw: dict) -> StrlabStudioSpec:
+    """Parse the raw spec dict from a CR into a typed StrlabStudioSpec."""
+    gw_raw  = raw.get("gateway", {})
+    jm_raw  = raw.get("jobmanager", {})
     svc_raw = raw.get("service", {})
     res_raw = raw.get("resources", {})
 
@@ -67,11 +67,11 @@ def parse_spec(raw: dict) -> FlinkSQLStudioSpec:
     )
     resources = ResourceSpec(
         requests=res_raw.get("requests", {"cpu": "50m", "memory": "64Mi"}),
-        limits=res_raw.get("limits", {"cpu": "200m", "memory": "128Mi"}),
+        limits=res_raw.get("limits",   {"cpu": "200m", "memory": "128Mi"}),
     )
 
-    return FlinkSQLStudioSpec(
-        image=raw.get("image", "codedstreams/flinksql-studio:latest"),
+    return StrlabStudioSpec(
+        image=raw.get("image", "codedstreams/strlabstudio:latest"),
         replicas=int(raw.get("replicas", 1)),
         gateway=gateway,
         jobmanager=jobmanager,

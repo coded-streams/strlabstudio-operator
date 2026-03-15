@@ -1,4 +1,4 @@
-# Development Guide — FlinkSQL Studio Operator
+# Development Guide — Str:::lab Studio Operator
 
 ## Prerequisites
 
@@ -14,20 +14,20 @@
 pip install -r requirements.txt
 
 # 2. Apply CRD to your cluster first
-kubectl apply -f config/crd/flinksqlstudios.yaml
+kubectl apply -f config/crd/strlabstudios.yaml
 
 # 3. Apply RBAC
 kubectl apply -f config/rbac/rbac.yaml
 
 # 4. Run the operator locally (uses your current kubeconfig)
-kopf run controllers/flinksqlstudio_controller.py --verbose --all-namespaces
+kopf run controllers/strlabstudio_controller.py --verbose --all-namespaces
 
 # 5. In another terminal, apply a sample CR
 kubectl apply -f config/samples/basic.yaml
 
 # 6. Watch the operator react
-kubectl get flinksqlstudio -A -w
-kubectl describe flinksqlstudio my-studio -n flink
+kubectl get strlabstudio -A -w
+kubectl describe strlabstudio dev -n default
 ```
 
 ## Testing
@@ -37,32 +37,32 @@ kubectl describe flinksqlstudio my-studio -n flink
 kubectl apply -f config/samples/basic.yaml
 
 # Check status
-kubectl get flinksqlstudio my-studio -n flink -o yaml | grep -A10 status
+kubectl get strlabstudio dev -n default -o yaml | grep -A10 status
 
 # Port-forward to access the studio
-kubectl port-forward svc/my-studio 3030:3030 -n flink
+kubectl port-forward svc/strlab-studio-dev 3030:80 -n default
 # Open http://localhost:3030
 
 # Delete and verify cleanup
-kubectl delete flinksqlstudio my-studio -n flink
-kubectl get pods -n flink  # should show no studio pods
+kubectl delete strlabstudio dev -n default
+kubectl get pods -n default  # should show no strlab-studio pods
 ```
 
 ## Project structure
 
 ```
-flinksql-kube-operator/
+strlab-kube-operator/
 ├── api/v1alpha1/types.py                    # CRD type definitions
-├── controllers/flinksqlstudio_controller.py  # Reconciliation logic
+├── controllers/strlabstudio_controller.py   # Reconciliation logic
 ├── config/
-│   ├── crd/flinksqlstudios.yaml             # CRD manifest
-│   ├── manager/manager.yaml                 # Operator deployment
-│   ├── rbac/rbac.yaml                       # ClusterRole + binding
-│   └── samples/                             # Example CRs
-├── helm/flinksql-operator/                  # Helm chart
+│   ├── crd/strlabstudios.yaml              # CRD manifest
+│   ├── manager/manager.yaml                # Operator deployment
+│   ├── rbac/rbac.yaml                      # ClusterRole + binding
+│   └── samples/                            # Example CRs
+├── helm/strlab-operator/                   # Helm chart
 └── docs/
-    ├── DEVELOPMENT.md                       
-    ├── CRD_REFERENCE.md                     
-    ├── STORAGE.md                           # PVC / storage guide
-    └── HOSTING.md                           # Helm chart hosting guide
+    ├── DEVELOPMENT.md
+    ├── CRD_REFERENCE.md
+    ├── STORAGE.md
+    └── HOSTING.md
 ```

@@ -1,11 +1,11 @@
 apiVersion: v2
-name: flinksql-operator
-description: Kubernetes Operator for FlinkSQL Studio
+name: strlab-operator
+description: Kubernetes Operator for Str:::lab Studio
 type: application
 version: "1.0.0"
 appVersion: "1.0.0"
-keywords: [flink, operator, kubernetes, sql]
-home: https://github.com/coded-streams/flinksql-kube-operator
+keywords: [flink, sql, streaming, kubernetes, operator, strlabstudio]
+home: https://github.com/coded-streams/strlab-kube-operator
 maintainers:
   - name: Nestor A. A
     email: nestorabiawuh@gmail.com

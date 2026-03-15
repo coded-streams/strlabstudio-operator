@@ -1,56 +1,42 @@
-# Hosting the FlinkSQL Studio Operator — Helm Chart Repository Guide
+# Hosting the Str:::lab Studio Operator — Helm Chart Repository Guide
 
-This guide walks through every option for hosting and distributing the
-FlinkSQL StudioKube Operator, from a simple GitHub Pages chart repo to
-ArtifactHub and OCI registries.
+This guide covers every option for hosting and distributing the
+Str:::lab Studio Kube Operator.
 
 ---
 
 ## Option 1: GitHub Pages (simplest, free)
 
-This is the standard way most open-source operators are distributed.
-Helm treats any static HTTP server serving an `index.yaml` as a valid chart repo.
-
 ### Step 1 — Package the chart
-
 ```bash
-# From the repo root
-helm package helm/flinksql-operator --destination ./charts
-# Creates: charts/flinksql-operator-1.0.0.tgz
+helm package helm/strlab-operator --destination ./charts
+# Creates: charts/strlab-operator-1.0.0.tgz
 ```
 
 ### Step 2 — Generate the chart index
-
 ```bash
-helm repo index charts/ --url https://coded-streams.github.io/flinksql-kube-operator/charts
-# Creates: charts/index.yaml
+helm repo index charts/ --url https://coded-streams.github.io/strlab-kube-operator/charts
 ```
 
 ### Step 3 — Enable GitHub Pages
-
 1. Go to your GitHub repo → **Settings → Pages**
-2. Set source to **Branch: main**, folder: **/ (root)** or **/docs**
+2. Set source to **Branch: main**, folder: **/ (root)**
 3. Commit and push the `charts/` folder
 
 ### Step 4 — Users install it
-
 ```bash
-helm repo add flinksql https://coded-streams.github.io/flinksql-kube-operator/charts
+helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
 helm repo update
-helm install flinksql-operator flinksql/flinksql-operator \
-  --namespace flinksql-system \
-  --create-namespace
+helm install strlab-operator strlabstudio/strlab-operator \
+  --namespace strlab-system --create-namespace
 ```
 
-### Automate packaging with GitHub Actions
-
+### Automate with GitHub Actions
 ```yaml
-# .github/workflows/release-chart.yml
 name: Release Helm Chart
 on:
   push:
     tags: ['v*']
-
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -58,18 +44,14 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Install Helm
         uses: azure/setup-helm@v3
-
       - name: Package chart
-        run: helm package helm/flinksql-operator --destination charts/
-
+        run: helm package helm/strlab-operator --destination charts/
       - name: Update index
         run: |
           helm repo index charts/ \
-            --url https://coded-streams.github.io/flinksql-kube-operator/charts
-
+            --url https://coded-streams.github.io/strlab-kube-operator/charts
       - name: Push to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
@@ -80,73 +62,34 @@ jobs:
 
 ---
 
-## Option 2: OCI Registry (Docker Hub or GHCR) — modern approach
-
-Helm 3.8+ supports storing charts as OCI artifacts alongside Docker images.
-This is the direction the Helm ecosystem is moving.
-
-### Push to GitHub Container Registry (GHCR)
+## Option 2: OCI Registry (GHCR or Docker Hub)
 
 ```bash
 # Login
 echo $GITHUB_TOKEN | helm registry login ghcr.io -u YOUR_GITHUB_USER --password-stdin
 
-# Package
-helm package helm/flinksql-operator
-
-# Push
-helm push flinksql-operator-1.0.0.tgz oci://ghcr.io/coded-streams/helm-charts
+# Package and push
+helm package helm/strlab-operator
+helm push strlab-operator-1.0.0.tgz oci://ghcr.io/coded-streams/helm-charts
 
 # Users install with:
-helm install flinksql-operator \
-  oci://ghcr.io/coded-streams/helm-charts/flinksql-operator \
-  --version 1.0.0 \
-  --namespace flinksql-system \
-  --create-namespace
-```
-
-### Push to Docker Hub
-
-```bash
-helm registry login registry-1.docker.io -u codedstreams
-helm push flinksql-operator-1.0.0.tgz oci://registry-1.docker.io/codedstreams/helm-charts
+helm install strlab-operator \
+  oci://ghcr.io/coded-streams/helm-charts/strlab-operator \
+  --version 1.0.0 --namespace strlab-system --create-namespace
 ```
 
 ---
 
-## Option 3: ArtifactHub — discoverability
+## Option 3: ArtifactHub
 
-[ArtifactHub](https://artifacthub.io) is the official Helm chart search engine
-(like Docker Hub but for charts). It indexes your chart automatically.
+1. Go to https://artifacthub.io → **Add repository**
+2. Choose **Helm charts**
+3. Enter: `https://coded-streams.github.io/strlab-kube-operator/charts`
 
-### Register your repo on ArtifactHub
-
-1. Go to https://artifacthub.io → **Sign up** → **Add repository**
-2. Choose **Helm charts** as the type
-3. Enter your GitHub Pages URL:
-   ```
-   https://coded-streams.github.io/flinksql-kube-operator/charts
-   ```
-4. ArtifactHub will index it within minutes
-
-### Add ArtifactHub metadata (optional but recommended)
-
-Create `helm/flinksql-operator/artifacthub-repo.yml` at your repo root:
-
-```yaml
-repositoryID: <your-artifacthub-repo-id>
-owners:
-  - name: Coded Streams
-    email: nestorabiawuh@gmail.com
-```
-
-### Add chart annotations for better listing
-
-In `helm/flinksql-operator/Chart.yaml`:
-
+Add to `helm/strlab-operator/Chart.yaml`:
 ```yaml
 annotations:
-  artifacthub.io/license: MIT
+  artifacthub.io/license: Apache-2.0
   artifacthub.io/maintainers: |
     - name: Coded Streams
       email: nestorabiawuh@gmail.com
@@ -155,64 +98,31 @@ annotations:
     - flink
     - sql
     - streaming
-    - kafka
     - kubernetes
     - operator
 ```
 
 ---
 
-## Option 4: OperatorHub.io — for Kubernetes operators specifically
-
-[OperatorHub.io](https://operatorhub.io) is to Kubernetes operators what
-ArtifactHub is to Helm charts. It's bundled into OpenShift and also indexed
-by the Operator Lifecycle Manager (OLM).
-
-### What you need
-
-To list on OperatorHub you need to package using the **Operator Bundle** format:
-
-```
-bundle/
-├── manifests/
-│   ├── flinksqlstudio-operator.clusterserviceversion.yaml  # OLM CSV
-│   ├── flinksqlstudios.crd.yaml
-│   └── flinksqlstudio-operator.deployment.yaml
-├── metadata/
-│   └── annotations.yaml
-└── Dockerfile.bundle
-```
-
-This is more involved than a Helm chart and usually worthwhile once you have
-a mature operator. For now, ArtifactHub + GitHub Pages covers 95% of users.
-
----
-
-## Recommended hosting strategy for FlinkSQL Studio Operator
-
-| Phase | Action |
-|---|---|
-| **Now** | GitHub Pages chart repo + ArtifactHub listing |
-| **v1.1** | OCI push to GHCR alongside existing GitHub Pages |
-| **v2.0** | OperatorHub listing with OLM bundle |
-
-### Full release checklist
+## Full release checklist
 
 ```bash
 # 1. Bump version in Chart.yaml and values.yaml
+
 # 2. Build and push operator image
-docker build -t codedstreams/flinksql-kube-operator:1.1.0 .
-docker push codedstreams/flinksql-kube-operator:1.1.0
-docker tag codedstreams/flinksql-kube-operator:1.1.0 codedstreams/flinksql-kube-operator:latest
-docker push codedstreams/flinksql-kube-operator:latest
+docker build -t codedstreams/strlab-kube-operator:1.1.0 .
+docker push codedstreams/strlab-kube-operator:1.1.0
+docker tag  codedstreams/strlab-kube-operator:1.1.0 \
+            codedstreams/strlab-kube-operator:latest
+docker push codedstreams/strlab-kube-operator:latest
 
 # 3. Package and push Helm chart
-helm package helm/flinksql-operator --destination charts/
-helm repo index charts/ --url https://coded-streams.github.io/flinksql-kube-operator/charts
+helm package helm/strlab-operator --destination charts/
+helm repo index charts/ --url https://coded-streams.github.io/strlab-kube-operator/charts
 git add charts/ && git commit -m "chore: release chart v1.1.0" && git push
 
 # 4. Also push as OCI artifact
-helm push charts/flinksql-operator-1.1.0.tgz oci://ghcr.io/coded-streams/helm-charts
+helm push charts/strlab-operator-1.1.0.tgz oci://ghcr.io/coded-streams/helm-charts
 
 # 5. Create GitHub release tag
 git tag v1.1.0 && git push origin v1.1.0
@@ -220,45 +130,31 @@ git tag v1.1.0 && git push origin v1.1.0
 
 ---
 
-## Installing the operator — quick reference
+## Quick reference — install options
 
-### From GitHub Pages (HTTP repo)
 ```bash
-helm repo add flinksql https://coded-streams.github.io/flinksql-kube-operator/charts
-helm repo update
-helm install flinksql-operator flinksql/flinksql-operator \
-  --namespace flinksql-system --create-namespace
-```
+# GitHub Pages
+helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
+helm install strlab-operator strlabstudio/strlab-operator \
+  --namespace strlab-system --create-namespace
 
-### From OCI (GHCR)
-```bash
-helm install flinksql-operator \
-  oci://ghcr.io/coded-streams/helm-charts/flinksql-operator \
-  --version 1.0.0 --namespace flinksql-system --create-namespace
-```
+# OCI
+helm install strlab-operator \
+  oci://ghcr.io/coded-streams/helm-charts/strlab-operator \
+  --version 1.0.0 --namespace strlab-system --create-namespace
 
-### From source (development)
-```bash
-helm install flinksql-operator ./helm/flinksql-operator \
-  --namespace flinksql-system --create-namespace
-```
+# From source
+helm install strlab-operator ./helm/strlab-operator \
+  --namespace strlab-system --create-namespace
 
-### Verify installation
-```bash
-kubectl get pods -n flinksql-system
-# NAME                                    READY   STATUS    RESTARTS
-# flinksqlstudio-operator-xxx-yyy         1/1     Running   0
+# Verify
+kubectl get pods -n strlab-system
+kubectl get crd strlabstudios.codedstreams.io
 
-kubectl get crd flinksqlstudios.codedstreams.io
-# NAME                                  CREATED AT
-# flinksqlstudios.codedstreams.io       2026-03-10T...
-```
-
-### Deploy your first studio instance
-```bash
+# Deploy first instance
 kubectl apply -f - <<EOF
 apiVersion: codedstreams.io/v1alpha1
-kind: FlinkSQLStudio
+kind: StrlabStudio
 metadata:
   name: my-studio
   namespace: flink
@@ -272,9 +168,9 @@ spec:
     port: 8081
   service:
     type: ClusterIP
-    port: 3030
+    port: 80
 EOF
 
-kubectl port-forward svc/my-studio 3030:3030 -n flink
+kubectl port-forward svc/strlab-studio-my-studio 3030:80 -n flink
 # Open http://localhost:3030
 ```

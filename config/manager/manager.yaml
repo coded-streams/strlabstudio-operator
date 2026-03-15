@@ -2,37 +2,37 @@
 # config/manager/manager.yaml
 # Deploys the operator controller into the cluster.
 # Prerequisites:
-#   kubectl apply -f config/crd/flinksqlstudios.yaml
+#   kubectl apply -f config/crd/strlabstudios.yaml
 #   kubectl apply -f config/rbac/rbac.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: flinksqlstudio-operator
-  namespace: flinksql-system
+  name: strlabstudio-operator
+  namespace: strlab-system
   labels:
-    app: flinksqlstudio-operator
-    control-plane: flinksqlstudio-operator
+    app: strlabstudio-operator
+    control-plane: strlabstudio-operator
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: flinksqlstudio-operator
+      app: strlabstudio-operator
   template:
     metadata:
       labels:
-        app: flinksqlstudio-operator
-        control-plane: flinksqlstudio-operator
+        app: strlabstudio-operator
+        control-plane: strlabstudio-operator
     spec:
-      serviceAccountName: flinksqlstudio-operator
+      serviceAccountName: strlabstudio-operator
       securityContext:
         runAsNonRoot: true
         runAsUser: 65534
         fsGroup: 65534
       containers:
         - name: operator
-          image: codedstreams/flinksql-kube-operator:latest
+          image: codedstreams/strlab-kube-operator:latest
           imagePullPolicy: Always
-          command: ["kopf", "run", "/app/controllers/flinksqlstudio_controller.py", "--all-namespaces"]
+          command: ["kopf", "run", "/app/controllers/strlabstudio_controller.py", "--all-namespaces"]
           env:
             - name: OPERATOR_NAMESPACE
               valueFrom:

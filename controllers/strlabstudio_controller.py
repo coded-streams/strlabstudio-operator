@@ -1,13 +1,13 @@
 """
-controllers/flinksqlstudio_controller.py
-========================================
-Kopf-based reconciler for FlinkSQLStudio custom resources.
+controllers/strlabstudio_controller.py
+=======================================
+Kopf-based reconciler for StrlabStudio custom resources.
 
 Run locally:
-    kopf run controllers/flinksqlstudio_controller.py --verbose
+    kopf run controllers/strlabstudio_controller.py --verbose
 
 Deploy to cluster:
-    kubectl apply -f config/crd/flinksqlstudios.yaml
+    kubectl apply -f config/crd/strlabstudios.yaml
     kubectl apply -f config/rbac/rbac.yaml
     kubectl apply -f config/manager/manager.yaml
 """
@@ -20,18 +20,18 @@ import sys
 import os
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from api.v1alpha1.types import parse_spec, FlinkSQLStudioSpec
+from api.v1alpha1.types import parse_spec, StrlabStudioSpec
 
-# ── Kubernetes API clients (initialized at startup) ──────────────────────────
-apps_v1: kubernetes.client.AppsV1Api  | None = None
-core_v1: kubernetes.client.CoreV1Api  | None = None
+# ── Kubernetes API clients (initialized at startup) ───────────────────────────
+apps_v1: kubernetes.client.AppsV1Api | None = None
+core_v1: kubernetes.client.CoreV1Api | None = None
 log = logging.getLogger(__name__)
 
 MANAGED_BY_LABEL = "codedstreams.io/managed-by"
-OPERATOR_NAME    = "flinksqlstudio-operator"
+OPERATOR_NAME    = "strlabstudio-operator"
 API_GROUP        = "codedstreams.io"
 API_VERSION      = "v1alpha1"
-KIND             = "FlinkSQLStudio"
+KIND             = "StrlabStudio"
 
 
 @kopf.on.startup()
@@ -48,16 +48,16 @@ def configure(settings: kopf.OperatorSettings, **_):
     global apps_v1, core_v1
     apps_v1 = kubernetes.client.AppsV1Api()
     core_v1 = kubernetes.client.CoreV1Api()
-    log.info("FlinkSQL Studio Operator started")
+    log.info("Str:::lab Studio Operator started")
 
 
 # ── Create / Update handler ───────────────────────────────────────────────────
-@kopf.on.create(API_GROUP, API_VERSION, "flinksqlstudios")
-@kopf.on.update(API_GROUP, API_VERSION, "flinksqlstudios")
+@kopf.on.create(API_GROUP, API_VERSION, "strlabstudios")
+@kopf.on.update(API_GROUP, API_VERSION, "strlabstudios")
 def reconcile(name: str, namespace: str, spec: dict, uid: str,
               logger: kopf.Logger, **kwargs):
-    logger.info(f"Reconciling FlinkSQLStudio/{name} in {namespace}")
-    parsed = parse_spec(spec)
+    logger.info(f"Reconciling StrlabStudio/{name} in {namespace}")
+    parsed    = parse_spec(spec)
     owner_ref = _owner_ref(name, namespace, uid)
 
     _reconcile_deployment(name, namespace, parsed, owner_ref, logger)
@@ -67,19 +67,19 @@ def reconcile(name: str, namespace: str, spec: dict, uid: str,
 
 
 # ── Delete handler ────────────────────────────────────────────────────────────
-@kopf.on.delete(API_GROUP, API_VERSION, "flinksqlstudios")
+@kopf.on.delete(API_GROUP, API_VERSION, "strlabstudios")
 def on_delete(name: str, namespace: str, logger: kopf.Logger, **kwargs):
     """
     Kubernetes garbage-collects owned resources automatically when the CR is
-    deleted (via ownerReferences).  This handler just logs the event.
+    deleted (via ownerReferences). This handler just logs the event.
     """
-    logger.info(f"FlinkSQLStudio/{name} deleted — owned resources will be GC'd")
+    logger.info(f"StrlabStudio/{name} deleted — owned resources will be GC'd")
 
 
 # ── Deployment reconciler ─────────────────────────────────────────────────────
-def _reconcile_deployment(name: str, namespace: str, spec: FlinkSQLStudioSpec,
+def _reconcile_deployment(name: str, namespace: str, spec: StrlabStudioSpec,
                           owner_ref: dict, logger: kopf.Logger):
-    deploy_name = f"flinksql-studio-{name}"
+    deploy_name = f"strlab-studio-{name}"
     labels = _labels(name)
 
     env_vars = [
@@ -93,9 +93,9 @@ def _reconcile_deployment(name: str, namespace: str, spec: FlinkSQLStudioSpec,
         "apiVersion": "apps/v1",
         "kind": "Deployment",
         "metadata": {
-            "name": deploy_name,
-            "namespace": namespace,
-            "labels": labels,
+            "name":            deploy_name,
+            "namespace":       namespace,
+            "labels":          labels,
             "ownerReferences": [owner_ref],
         },
         "spec": {
@@ -105,11 +105,11 @@ def _reconcile_deployment(name: str, namespace: str, spec: FlinkSQLStudioSpec,
                 "metadata": {"labels": labels},
                 "spec": {
                     "containers": [{
-                        "name": "studio",
-                        "image": spec.image,
+                        "name":            "studio",
+                        "image":           spec.image,
                         "imagePullPolicy": "Always",
                         "ports": [{"containerPort": 80, "name": "http"}],
-                        "env": env_vars,
+                        "env":   env_vars,
                         "resources": {
                             "requests": spec.resources.requests,
                             "limits":   spec.resources.limits,
@@ -130,7 +130,6 @@ def _reconcile_deployment(name: str, namespace: str, spec: FlinkSQLStudioSpec,
 
     try:
         apps_v1.read_namespaced_deployment(deploy_name, namespace)
-        # Update existing
         apps_v1.replace_namespaced_deployment(
             deploy_name, namespace,
             kubernetes.client.V1Deployment(**_flatten(desired))
@@ -148,10 +147,10 @@ def _reconcile_deployment(name: str, namespace: str, spec: FlinkSQLStudioSpec,
 
 
 # ── Service reconciler ────────────────────────────────────────────────────────
-def _reconcile_service(name: str, namespace: str, spec: FlinkSQLStudioSpec,
+def _reconcile_service(name: str, namespace: str, spec: StrlabStudioSpec,
                        owner_ref: dict, logger: kopf.Logger):
-    svc_name = f"flinksql-studio-{name}"
-    labels = _labels(name)
+    svc_name = f"strlab-studio-{name}"
+    labels   = _labels(name)
 
     ports = [{"port": spec.service.port, "targetPort": 80, "name": "http"}]
     if spec.service.type == "NodePort" and spec.service.nodePort:
@@ -159,23 +158,22 @@ def _reconcile_service(name: str, namespace: str, spec: FlinkSQLStudioSpec,
 
     desired = {
         "apiVersion": "v1",
-        "kind": "Service",
+        "kind":       "Service",
         "metadata": {
-            "name": svc_name,
-            "namespace": namespace,
-            "labels": labels,
+            "name":            svc_name,
+            "namespace":       namespace,
+            "labels":          labels,
             "ownerReferences": [owner_ref],
         },
         "spec": {
             "selector": labels,
-            "type": spec.service.type,
-            "ports": ports,
+            "type":     spec.service.type,
+            "ports":    ports,
         }
     }
 
     try:
         core_v1.read_namespaced_service(svc_name, namespace)
-        # patch is safer for Services (preserves clusterIP)
         core_v1.patch_namespaced_service(
             svc_name, namespace,
             kubernetes.client.V1Service(**_flatten(desired))
@@ -195,9 +193,9 @@ def _reconcile_service(name: str, namespace: str, spec: FlinkSQLStudioSpec,
 # ── Helpers ───────────────────────────────────────────────────────────────────
 def _labels(instance_name: str) -> dict:
     return {
-        "app":                        f"flinksql-studio-{instance_name}",
-        MANAGED_BY_LABEL:             OPERATOR_NAME,
-        "codedstreams.io/instance":   instance_name,
+        "app":                      f"strlab-studio-{instance_name}",
+        MANAGED_BY_LABEL:           OPERATOR_NAME,
+        "codedstreams.io/instance": instance_name,
     }
 
 

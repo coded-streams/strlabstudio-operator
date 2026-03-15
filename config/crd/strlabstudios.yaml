@@ -1,20 +1,20 @@
 ---
-# config/crd/flinksqlstudios.yaml
-# Apply once to your cluster:  kubectl apply -f config/crd/flinksqlstudios.yaml
+# config/crd/strlabstudios.yaml
+# Apply once to your cluster:  kubectl apply -f config/crd/strlabstudios.yaml
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: flinksqlstudios.codedstreams.io
+  name: strlabstudios.codedstreams.io
   annotations:
     controller-gen.kubebuilder.io/version: v0.14.0
 spec:
   group: codedstreams.io
   scope: Namespaced
   names:
-    plural:     flinksqlstudios
-    singular:   flinksqlstudio
-    kind:       FlinkSQLStudio
-    shortNames: [fss]
+    plural:     strlabstudios
+    singular:   strlabstudio
+    kind:       StrlabStudio
+    shortNames: [sls]
   versions:
     - name: v1alpha1
       served: true
@@ -45,8 +45,8 @@ spec:
               properties:
                 image:
                   type: string
-                  default: "codedstreams/flinksql-studio:latest"
-                  description: "Docker image for the FlinkSQL Studio IDE"
+                  default: "codedstreams/strlabstudio:latest"
+                  description: "Docker image for the Str:::lab Studio IDE"
                 replicas:
                   type: integer
                   default: 1

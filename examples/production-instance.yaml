@@ -1,16 +1,16 @@
 # examples/production-instance.yaml
-# Full production FlinkSQLStudio CR
+# Full production StrlabStudio CR
 # kubectl apply -f examples/production-instance.yaml
 apiVersion: codedstreams.io/v1alpha1
-kind: FlinkSQLStudio
+kind: StrlabStudio
 metadata:
   name: production
   namespace: data-platform
   labels:
     team: data-engineering
-    env: production
+    env:  production
 spec:
-  image: codedstreams/flinksql-studio:1.0.0
+  image:    codedstreams/strlabstudio:v1.0.22
   replicas: 2
   gateway:
     host: flink-sql-gateway.flink-prod.svc.cluster.local
@@ -23,11 +23,11 @@ spec:
     port: 80
   resources:
     requests:
-      cpu: "100m"
+      cpu:    "100m"
       memory: "128Mi"
     limits:
-      cpu: "500m"
+      cpu:    "500m"
       memory: "256Mi"
   extraEnv:
-    - name: STUDIO_TITLE
-      value: "Production FlinkSQL Studio"
+    - name:  STUDIO_TITLE
+      value: "Production Str:::lab Studio"

@@ -1,18 +1,21 @@
-# FlinkSQL Kube Operator
+# Str:::lab Studio Kube Operator
 
-> A Kubernetes operator that manages FlinkSQL Studio deployments as first-class CRDs — deploy, configure, and lifecycle-manage FlinkSQL Studio instances on any Kubernetes cluster.
+> A Kubernetes operator that manages Str:::lab Studio deployments as first-class CRDs — deploy, configure, and lifecycle-manage Str:::lab Studio instances on any Kubernetes cluster.
 
-![License](https://img.shields.io/badge/license-MIT-green)
+![License](https://img.shields.io/badge/license-Apache%202.0-green)
 ![Kubernetes](https://img.shields.io/badge/kubernetes-1.24%2B-blue)
 ![Python](https://img.shields.io/badge/python-3.11%2B-yellow)
+
+> **Apache Flink** is a trademark of the Apache Software Foundation.
+> Str:::lab Studio is an independent project not affiliated with the Apache Software Foundation.
 
 ---
 
 ## What is it?
 
-The FlinkSQL Kube Operator watches for `FlinkSQLStudio` custom resources and automatically:
+The Str:::lab Studio Kube Operator watches for `StrlabStudio` custom resources and automatically:
 
-- Deploys and configures FlinkSQL Studio instances
+- Deploys and configures Str:::lab Studio instances
 - Manages nginx reverse proxy configuration to route to your Flink SQL Gateway and JobManager
 - Handles upgrades, scaling, and deletion of studio instances
 - Exposes status conditions on the CRD for GitOps workflows
@@ -24,8 +27,10 @@ The FlinkSQL Kube Operator watches for `FlinkSQLStudio` custom resources and aut
 ### Install via Helm
 
 ```bash
-helm install flinksql-operator ./helm/flinksql-operator \
-  --namespace flinksql-system \
+helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
+helm repo update
+helm install strlab-operator strlabstudio/strlab-operator \
+  --namespace strlab-system \
   --create-namespace
 ```
 
@@ -34,7 +39,7 @@ helm install flinksql-operator ./helm/flinksql-operator \
 ```yaml
 # examples/basic-instance.yaml
 apiVersion: codedstreams.io/v1alpha1
-kind: FlinkSQLStudio
+kind: StrlabStudio
 metadata:
   name: my-studio
   namespace: flink
@@ -53,7 +58,7 @@ spec:
 
 ```bash
 kubectl apply -f examples/basic-instance.yaml
-kubectl get flinksqlstudio -n flink
+kubectl get strlabstudio -n flink
 ```
 
 ---
@@ -72,7 +77,7 @@ See [docs/CRD_REFERENCE.md](docs/CRD_REFERENCE.md) for full spec documentation.
 | `spec.jobmanager.host` | string | required | JobManager hostname |
 | `spec.jobmanager.port` | int | `8081` | JobManager REST port |
 | `spec.service.type` | string | `ClusterIP` | `ClusterIP`, `NodePort`, or `LoadBalancer` |
-| `spec.image` | string | `codedstreams/flinksql-studio:latest` | Studio image to deploy |
+| `spec.image` | string | `codedstreams/strlabstudio:latest` | Studio image to deploy |
 | `spec.resources` | ResourceRequirements | — | CPU/memory requests and limits |
 
 ---
@@ -80,41 +85,43 @@ See [docs/CRD_REFERENCE.md](docs/CRD_REFERENCE.md) for full spec documentation.
 ## Project Structure
 
 ```
-flinksql-kube-operator/
+strlab-kube-operator/
 ├── api/
 │   └── v1alpha1/
-│       └── types.py                    # CRD type definitions (Python dataclasses)
+│       └── types.py                     # CRD type definitions (Python dataclasses)
 ├── controllers/
-│   └── flinksqlstudio_controller.py    # Reconciliation loop — kopf operator
+│   └── strlabstudio_controller.py       # Reconciliation loop — kopf operator
 ├── config/
 │   ├── crd/
-│   │   └── flinksqlstudios.yaml        # CRD manifest (applied to cluster)
+│   │   └── strlabstudios.yaml           # CRD manifest (applied to cluster)
 │   ├── manager/
-│   │   └── manager.yaml                # Operator deployment manifest
+│   │   └── manager.yaml                 # Operator deployment manifest
 │   ├── rbac/
-│   │   └── rbac.yaml                   # ClusterRole + ClusterRoleBinding
+│   │   └── rbac.yaml                    # ClusterRole + ClusterRoleBinding
 │   └── samples/
-│       ├── basic.yaml                  # Minimal FlinkSQLStudio CR
-│       └── production.yaml             # Production CR with resources/ingress
+│       ├── basic.yaml                   # Minimal StrlabStudio CR
+│       └── production.yaml              # Production CR with resources
 ├── examples/
-│   ├── basic-instance.yaml             # Quick-start example
-│   └── production-instance.yaml        # Full production example
+│   ├── basic-instance.yaml              # Quick-start example
+│   └── production-instance.yaml         # Full production example
 ├── helm/
-│   └── flinksql-operator/
-│       ├── Chart.yaml                  # Helm chart metadata
-│       ├── values.yaml                 # Default values
+│   └── strlab-operator/
+│       ├── Chart.yaml                   # Helm chart metadata
+│       ├── values.yaml                  # Default values
 │       └── templates/
-│           └── all.yaml                # All operator resources templated
+│           └── all.yaml                 # All operator resources templated
 ├── docs/
-│   ├── CRD_REFERENCE.md                # Full CRD field reference
-│   └── DEVELOPMENT.md                  # Local dev + testing guide
+│   ├── CRD_REFERENCE.md                 # Full CRD field reference
+│   ├── DEVELOPMENT.md                   # Local dev + testing guide
+│   ├── HOSTING.md                       # Helm chart hosting guide
+│   └── STORAGE.md                       # PVC / storage guide
 ├── .github/
 │   └── workflows/
-│       └── publish.yml                 # Build and push operator image to Docker Hub
-├── Dockerfile                          # Operator container image
-├── requirements.txt                    # kopf, kubernetes-client, pydantic
+│       └── publish.yml                  # Build and push operator image to Docker Hub
+├── Dockerfile                           # Operator container image
+├── requirements.txt                     # kopf, kubernetes-client, pydantic
 ├── LICENSE
-└── README.md                           # This file
+└── README.md
 ```
 
 ---
@@ -124,14 +131,14 @@ flinksql-kube-operator/
 The operator uses [kopf](https://kopf.readthedocs.io/) (Kubernetes Operator Pythonic Framework):
 
 ```python
-# controllers/flinksqlstudio_controller.py
+# controllers/strlabstudio_controller.py
 
-@kopf.on.create('codedstreams.io', 'v1alpha1', 'flinksqlstudios')
-def create_fn(spec, name, namespace, **kwargs):
-    # 1. Create nginx ConfigMap from spec.gateway / spec.jobmanager
-    # 2. Create Deployment with studio image + nginx sidecar
-    # 3. Create Service (ClusterIP / NodePort / LoadBalancer)
-    # 4. Patch status.conditions = [{ type: Ready, status: True }]
+@kopf.on.create('codedstreams.io', 'v1alpha1', 'strlabstudios')
+def reconcile(spec, name, namespace, **kwargs):
+    # 1. Parse spec into typed StrlabStudioSpec dataclass
+    # 2. Create/update Deployment (strlab-studio-<name>) with studio image
+    # 3. Create/update Service (strlab-studio-<name>)
+    # 4. ownerReferences ensure GC on CR deletion
 ```
 
 ---
@@ -144,11 +151,64 @@ See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for local dev instructions.
 # Install dependencies
 pip install -r requirements.txt
 
-# Run operator locally (uses your current kubeconfig)
-kopf run controllers/flinksqlstudio_controller.py --verbose
-
 # Apply CRD first
-kubectl apply -f config/crd/flinksqlstudios.yaml
+kubectl apply -f config/crd/strlabstudios.yaml
+
+# Run operator locally (uses your current kubeconfig)
+kopf run controllers/strlabstudio_controller.py --verbose
+
+# Apply a sample CR
+kubectl apply -f config/samples/basic.yaml
+
+# Watch it
+kubectl get strlabstudio -A -w
+```
+
+---
+
+## Hosting & distribution
+
+### Option A — GitHub Pages (recommended)
+```bash
+helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
+helm repo update
+helm install strlab-operator strlabstudio/strlab-operator \
+  --namespace strlab-system --create-namespace
+```
+
+### Option B — OCI / GHCR
+```bash
+helm install strlab-operator \
+  oci://ghcr.io/coded-streams/helm-charts/strlab-operator \
+  --version 1.0.0 --namespace strlab-system --create-namespace
+```
+
+### Option C — From source
+```bash
+helm install strlab-operator ./helm/strlab-operator \
+  --namespace strlab-system --create-namespace
+```
+
+See [docs/HOSTING.md](docs/HOSTING.md) for the full guide including ArtifactHub, OLM/OperatorHub, and the release checklist.
+
+---
+
+## Verify installation
+
+```bash
+kubectl get pods -n strlab-system
+# NAME                                 READY   STATUS    RESTARTS
+# strlabstudio-operator-xxx-yyy        1/1     Running   0
+
+kubectl get crd strlabstudios.codedstreams.io
+```
+
+## Deploy your first studio
+
+```bash
+kubectl apply -f examples/basic-instance.yaml
+kubectl port-forward svc/strlab-studio-dev 3030:80 -n default
+# Open http://localhost:3030
 ```
 
 ---
@@ -156,79 +216,28 @@ kubectl apply -f config/crd/flinksqlstudios.yaml
 ## Changelog
 
 ### v1.1 (current)
-- Updated studio image reference to v8 (session isolation, cancel job, streaming results, named export)
-- Added `spec.jobmanager` field to CRD for JobManager API proxy
-- Updated Helm chart values for new nginx config structure
-- Improved status condition reporting
+- Renamed from FlinkSQL Studio Kube Operator to **Str:::lab Studio Kube Operator**
+- CRD kind renamed `FlinkSQLStudio` → `StrlabStudio`, plural `flinksqlstudios` → `strlabstudios`
+- Short name changed from `fss` → `sls`
+- All resource names, namespaces, and image references updated
+- Studio image updated to `codedstreams/strlabstudio:v1.0.22`
 
 ### v1.0
-- Initial release
-- CREATE / UPDATE / DELETE reconciliation
-- Helm chart
-- Basic and production sample CRs
+- Initial release — CREATE/UPDATE/DELETE reconciliation, Helm chart, basic and production sample CRs
+
+---
+
+## Storage & PVC
+
+**The operator itself needs no PVC.** It is a stateless controller using the Kubernetes API for all state.
+
+The Str:::lab Studio pods it creates are also stateless by default — nginx serves a static file and the user workspace lives in browser `localStorage`.
+
+See [docs/STORAGE.md](docs/STORAGE.md) for optional PVC usage (custom HTML, server-side workspace backups).
 
 ---
 
 ## License
 
-MIT — see [LICENSE](LICENSE)
-
----
-
-## Storage & PVC requirements
-
-**The operator itself needs no PVC.** It is a stateless controller that stores all state in the Kubernetes API.
-
-The FlinkSQL Studio pods the operator creates are also stateless by default — the nginx container serves a static HTML file and the user's workspace lives in browser `localStorage`.
-
-A PVC is only needed if you want to:
-- Serve a custom `index.html` without rebuilding the image
-- Enable server-side workspace backups
-
-See [docs/STORAGE.md](docs/STORAGE.md) for full details and YAML examples.
-
----
-
-## Hosting & distribution
-
-The operator is distributed as a Helm chart. Three hosting options:
-
-### Option A — GitHub Pages (quickest)
-```bash
-helm repo add flinksql https://coded-streams.github.io/flinksql-kube-operator/charts
-helm repo update
-helm install flinksql-operator flinksql/flinksql-operator \
-  --namespace flinksql-system --create-namespace
-```
-
-### Option B — OCI / GHCR
-```bash
-helm install flinksql-operator \
-  oci://ghcr.io/coded-streams/helm-charts/flinksql-operator \
-  --version 1.0.0 --namespace flinksql-system --create-namespace
-```
-
-### Option C — From source
-```bash
-helm install flinksql-operator ./helm/flinksql-operator \
-  --namespace flinksql-system --create-namespace
-```
-
-For the complete hosting guide including ArtifactHub listing, OLM/OperatorHub packaging, GitHub Actions release automation, and the full release checklist, see **[docs/HOSTING.md](docs/HOSTING.md)**.
-
----
-
-## Verify installation
-
-```bash
-kubectl get pods -n flinksql-system
-kubectl get crd flinksqlstudios.codedstreams.io
-```
-
-## Deploy your first studio
-
-```bash
-kubectl apply -f examples/basic-instance.yaml
-kubectl port-forward svc/my-studio 3030:3030 -n flink
-# Open http://localhost:3030
-```
+Apache License 2.0 — see [LICENSE](LICENSE).
+Created by **Nestor A. A** · [coded-streams](https://github.com/coded-streams)
