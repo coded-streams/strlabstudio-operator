@@ -1,4 +1,3 @@
-# .github/workflows/publish.yml
 name: Build, Publish & Deploy Docs
 
 on:
