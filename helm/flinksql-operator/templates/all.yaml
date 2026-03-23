@@ -1,20 +1,20 @@
 {{- if .Values.installCRD }}
 ---
-# CRD is templated here for Helm lifecycle management
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: strlabstudios.codedstreams.io
   annotations:
-    helm.sh/resource-policy: keep   # preserve CRD on helm uninstall
+    helm.sh/resource-policy: keep
 spec:
   group: codedstreams.io
   scope: Namespaced
   names:
-    plural:     strlabstudios
-    singular:   strlabstudio
-    kind:       StrlabStudio
-    shortNames: [sls]
+    plural: strlabstudios
+    singular: strlabstudio
+    kind: StrlabStudio
+    shortNames:
+      - sls
   versions:
     - name: v1alpha1
       served: true
@@ -24,7 +24,8 @@ spec:
       schema:
         openAPIV3Schema:
           type: object
-          required: [spec]
+          required:
+            - spec
           properties:
             spec:
               type: object
@@ -33,12 +34,6 @@ spec:
               type: object
               x-kubernetes-preserve-unknown-fields: true
 {{- end }}
-
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .Values.operatorNamespace }}
 
 ---
 apiVersion: v1
@@ -100,6 +95,10 @@ spec:
         - name: operator
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
-          command: ["kopf", "run", "/app/controllers/strlabstudio_controller.py", "--all-namespaces"]
+          command:
+            - "kopf"
+            - "run"
+            - "/app/controllers/strlabstudio_controller.py"
+            - "--all-namespaces"
           resources:
             {{- toYaml .Values.resources | nindent 12 }}

@@ -1,4 +1,4 @@
-name: Build, Publish & Deploy Docs
+name: Build, Publish & Deploy (Image + Helm + Docs)
 
 on:
   push:
@@ -8,6 +8,8 @@ on:
 
 env:
   IMAGE_NAME: codedstreams/strlab-kube-operator
+  HELM_CHART_PATH: helm/flinksql-operator
+  PAGES_URL: https://coded-streams.github.io/strlabstudio-operator
 
 jobs:
 
@@ -64,48 +66,47 @@ jobs:
           repository: ${{ env.IMAGE_NAME }}
           readme-filepath: ./README.md
 
-  build-docs:
-    name: Build docs site
+  publish-helm-and-docs:
+    name: Publish Helm Repo + Docs to GitHub Pages
     runs-on: ubuntu-latest
     needs: build-and-push
     permissions:
-      contents: read
-      pages: write
-      id-token: write
+      contents: write
 
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
 
-      - name: Prepare docs site
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Extract version from tag
+        id: version
         run: |
-          mkdir -p _site
-          cp -r docs/. _site/
-          echo "Site contents:"
-          find _site -type f | sort
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${VERSION#v}
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Prepare public directory
+        run: |
+          mkdir -p public
+          cp -r docs/. public/ || true
+
+      - name: Package Helm chart
+        run: |
+          helm package $HELM_CHART_PATH \
+            --version $VERSION \
+            --app-version $VERSION \
+            -d public
+
+      - name: Generate Helm repo index
+        run: |
+          helm repo index public \
+            --url $PAGES_URL
+
+      - name: Deploy to GitHub Pages (gh-pages branch)
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: _site
-
-  deploy-docs:
-    name: Deploy to GitHub Pages
-    runs-on: ubuntu-latest
-    needs: build-docs
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
-
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deploy
-        uses: actions/deploy-pages@v4
-
-      - name: Print deployed URL
-        run: echo "Docs live at ${{ steps.deploy.outputs.page_url }}"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: public
+          publish_branch: gh-pages
