@@ -2,10 +2,10 @@ apiVersion: v1
 entries:
   strlab-operator:
   - apiVersion: v2
-    appVersion: 1.2.1
-    created: "2026-05-04T05:16:52.956414605Z"
+    appVersion: 1.2.2
+    created: "2026-05-04T06:21:34.439707837Z"
     description: Kubernetes Operator for Strlab Studio
-    digest: d92d93cfea3a1224fe72357ee6bc0e8cee7046ba3008d72cd66ebc17a961749e
+    digest: b22cc32e5b41cc7dd53d8871f3858fb4567433f0670a14eca6ac287a766fe1b7
     home: https://github.com/coded-streams/strlabstudio-operator
     keywords:
     - flink
@@ -20,6 +20,6 @@ entries:
     name: strlab-operator
     type: application
     urls:
-    - https://coded-streams.github.io/strlabstudio-operator/charts/strlab-operator-1.2.1.tgz
-    version: 1.2.1
-generated: "2026-05-04T05:16:52.956076162Z"
+    - https://coded-streams.github.io/strlabstudio-operator/charts/strlab-operator-1.2.2.tgz
+    version: 1.2.2
+generated: "2026-05-04T06:21:34.43936113Z"
