@@ -89,9 +89,59 @@ def _reconcile_deployment(name: str, namespace: str, spec: StrlabStudioSpec,
         {"name": "JOBMANAGER_PORT",    "value": str(spec.jobmanager.port)},
     ] + spec.extraEnv
 
-    desired = {
-        "apiVersion": "apps/v1",
-        "kind": "Deployment",
+    desired = _build_deployment(deploy_name, namespace, labels, owner_ref, spec, env_vars)
+
+    try:
+        apps_v1.read_namespaced_deployment(deploy_name, namespace)
+        apps_v1.replace_namespaced_deployment(
+            deploy_name, namespace,
+            _dict_to_deployment(desired)
+        )
+        logger.info(f"Updated Deployment/{deploy_name}")
+    except kubernetes.client.exceptions.ApiException as e:
+        if e.status == 404:
+            apps_v1.create_namespaced_deployment(
+                namespace,
+                _dict_to_deployment(desired)
+            )
+            logger.info(f"Created Deployment/{deploy_name}")
+        else:
+            raise kopf.PermanentError(f"Failed to reconcile Deployment: {e}")
+
+
+# ── Service reconciler ────────────────────────────────────────────────────────
+def _reconcile_service(name: str, namespace: str, spec: StrlabStudioSpec,
+                       owner_ref: dict, logger: kopf.Logger):
+    svc_name = f"strlab-studio-{name}"
+    labels   = _labels(name)
+
+    ports = [{"port": spec.service.port, "targetPort": 80, "name": "http"}]
+    if spec.service.type == "NodePort" and spec.service.nodePort:
+        ports[0]["nodePort"] = spec.service.nodePort
+
+    desired = _build_service(svc_name, namespace, labels, owner_ref, spec, ports)
+
+    try:
+        core_v1.read_namespaced_service(svc_name, namespace)
+        core_v1.patch_namespaced_service(
+            svc_name, namespace,
+            _dict_to_service(desired)
+        )
+        logger.info(f"Patched Service/{svc_name}")
+    except kubernetes.client.exceptions.ApiException as e:
+        if e.status == 404:
+            core_v1.create_namespaced_service(
+                namespace,
+                _dict_to_service(desired)
+            )
+            logger.info(f"Created Service/{svc_name}")
+        else:
+            raise kopf.PermanentError(f"Failed to reconcile Service: {e}")
+
+
+# ── Object builders ───────────────────────────────────────────────────────────
+def _build_deployment(deploy_name, namespace, labels, owner_ref, spec, env_vars):
+    return {
         "metadata": {
             "name":            deploy_name,
             "namespace":       namespace,
@@ -128,37 +178,9 @@ def _reconcile_deployment(name: str, namespace: str, spec: StrlabStudioSpec,
         }
     }
 
-    try:
-        apps_v1.read_namespaced_deployment(deploy_name, namespace)
-        apps_v1.replace_namespaced_deployment(
-            deploy_name, namespace,
-            kubernetes.client.V1Deployment(**_flatten(desired))
-        )
-        logger.info(f"Updated Deployment/{deploy_name}")
-    except kubernetes.client.exceptions.ApiException as e:
-        if e.status == 404:
-            apps_v1.create_namespaced_deployment(
-                namespace,
-                kubernetes.client.V1Deployment(**_flatten(desired))
-            )
-            logger.info(f"Created Deployment/{deploy_name}")
-        else:
-            raise kopf.PermanentError(f"Failed to reconcile Deployment: {e}")
 
-
-# ── Service reconciler ────────────────────────────────────────────────────────
-def _reconcile_service(name: str, namespace: str, spec: StrlabStudioSpec,
-                       owner_ref: dict, logger: kopf.Logger):
-    svc_name = f"strlab-studio-{name}"
-    labels   = _labels(name)
-
-    ports = [{"port": spec.service.port, "targetPort": 80, "name": "http"}]
-    if spec.service.type == "NodePort" and spec.service.nodePort:
-        ports[0]["nodePort"] = spec.service.nodePort
-
-    desired = {
-        "apiVersion": "v1",
-        "kind":       "Service",
+def _build_service(svc_name, namespace, labels, owner_ref, spec, ports):
+    return {
         "metadata": {
             "name":            svc_name,
             "namespace":       namespace,
@@ -172,22 +194,43 @@ def _reconcile_service(name: str, namespace: str, spec: StrlabStudioSpec,
         }
     }
 
-    try:
-        core_v1.read_namespaced_service(svc_name, namespace)
-        core_v1.patch_namespaced_service(
-            svc_name, namespace,
-            kubernetes.client.V1Service(**_flatten(desired))
-        )
-        logger.info(f"Patched Service/{svc_name}")
-    except kubernetes.client.exceptions.ApiException as e:
-        if e.status == 404:
-            core_v1.create_namespaced_service(
-                namespace,
-                kubernetes.client.V1Service(**_flatten(desired))
-            )
-            logger.info(f"Created Service/{svc_name}")
-        else:
-            raise kopf.PermanentError(f"Failed to reconcile Service: {e}")
+
+# ── Dict → kubernetes client object converters ────────────────────────────────
+def _dict_to_deployment(d: dict) -> kubernetes.client.V1Deployment:
+    """Convert a raw dict (without apiVersion/kind) to a V1Deployment object."""
+    api_client = kubernetes.client.ApiClient()
+    meta = d.get("metadata", {})
+    spec = d.get("spec", {})
+    return kubernetes.client.V1Deployment(
+        metadata=api_client.deserialize(
+            _MockResponse(meta), kubernetes.client.V1ObjectMeta
+        ),
+        spec=api_client.deserialize(
+            _MockResponse(spec), kubernetes.client.V1DeploymentSpec
+        ),
+    )
+
+
+def _dict_to_service(d: dict) -> kubernetes.client.V1Service:
+    """Convert a raw dict (without apiVersion/kind) to a V1Service object."""
+    api_client = kubernetes.client.ApiClient()
+    meta = d.get("metadata", {})
+    spec = d.get("spec", {})
+    return kubernetes.client.V1Service(
+        metadata=api_client.deserialize(
+            _MockResponse(meta), kubernetes.client.V1ObjectMeta
+        ),
+        spec=api_client.deserialize(
+            _MockResponse(spec), kubernetes.client.V1ServiceSpec
+        ),
+    )
+
+
+class _MockResponse:
+    """Wraps a dict so ApiClient.deserialize() can process it."""
+    def __init__(self, data):
+        import json
+        self.data = json.dumps(data)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -208,8 +251,3 @@ def _owner_ref(name: str, namespace: str, uid: str) -> dict:
         "controller":         True,
         "blockOwnerDeletion": True,
     }
-
-
-def _flatten(obj):
-    """Pass dicts straight to kubernetes client (it accepts raw dicts via **kwargs)."""
-    return obj
