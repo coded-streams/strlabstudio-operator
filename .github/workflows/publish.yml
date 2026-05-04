@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_NAME: codedstreams/strlab-kube-operator
-  HELM_CHART_PATH: helm/flinksql-operator
-  PAGES_URL: https://coded-streams.github.io/strlabstudio-operator
+  IMAGE_NAME: codedstreams/strlabstudio-operator
+  HELM_CHART_PATH: helm/strlab-operator
+  PAGES_URL: https://coded-streams.github.io/strlabstudio-operator/charts
 
 jobs:
 
@@ -87,9 +87,9 @@ jobs:
           VERSION=${VERSION#v}
           echo "VERSION=$VERSION" >> $GITHUB_ENV
 
-      - name: Prepare public directory
+      - name: Prepare public/charts directory
         run: |
-          mkdir -p public
+          mkdir -p public/charts
           cp -r docs/. public/ || true
 
       - name: Package Helm chart
@@ -97,11 +97,11 @@ jobs:
           helm package $HELM_CHART_PATH \
             --version $VERSION \
             --app-version $VERSION \
-            -d public
+            -d public/charts
 
       - name: Generate Helm repo index
         run: |
-          helm repo index public \
+          helm repo index public/charts \
             --url $PAGES_URL
 
       - name: Deploy to GitHub Pages (gh-pages branch)
