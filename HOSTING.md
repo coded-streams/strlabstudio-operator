@@ -9,56 +9,30 @@ Str:::lab Studio Kube Operator.
 
 ### Step 1 — Package the chart
 ```bash
-helm package helm/strlab-operator --destination ./charts
-# Creates: charts/strlab-operator-1.0.0.tgz
+helm package helm/strlab-operator --destination ./public/charts
+# Creates: public/charts/strlab-operator-1.0.0.tgz
 ```
 
 ### Step 2 — Generate the chart index
 ```bash
-helm repo index charts/ --url https://coded-streams.github.io/strlab-kube-operator/charts
+helm repo index public/charts/ --url https://coded-streams.github.io/strlabstudio-operator/charts
 ```
 
 ### Step 3 — Enable GitHub Pages
 1. Go to your GitHub repo → **Settings → Pages**
-2. Set source to **Branch: main**, folder: **/ (root)**
-3. Commit and push the `charts/` folder
+2. Set source to **Branch: gh-pages**, folder: **/ (root)**
+3. The CI pipeline handles packaging and publishing automatically on every tag push
 
 ### Step 4 — Users install it
 ```bash
-helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
+helm repo add strlabstudio https://coded-streams.github.io/strlabstudio-operator/charts
 helm repo update
 helm install strlab-operator strlabstudio/strlab-operator \
   --namespace strlab-system --create-namespace
 ```
 
-### Automate with GitHub Actions
-```yaml
-name: Release Helm Chart
-on:
-  push:
-    tags: ['v*']
-jobs:
-  release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Install Helm
-        uses: azure/setup-helm@v3
-      - name: Package chart
-        run: helm package helm/strlab-operator --destination charts/
-      - name: Update index
-        run: |
-          helm repo index charts/ \
-            --url https://coded-streams.github.io/strlab-kube-operator/charts
-      - name: Push to gh-pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./charts
-          destination_dir: charts
-```
+### Automated via GitHub Actions
+The `.github/workflows/publish.yml` pipeline handles this automatically on every `v*.*.*` tag push — no manual steps needed after initial setup.
 
 ---
 
@@ -84,7 +58,7 @@ helm install strlab-operator \
 
 1. Go to https://artifacthub.io → **Add repository**
 2. Choose **Helm charts**
-3. Enter: `https://coded-streams.github.io/strlab-kube-operator/charts`
+3. Enter: `https://coded-streams.github.io/strlabstudio-operator/charts`
 
 Add to `helm/strlab-operator/Chart.yaml`:
 ```yaml
@@ -107,25 +81,13 @@ annotations:
 ## Full release checklist
 
 ```bash
-# 1. Bump version in Chart.yaml and values.yaml
+# 1. Bump version in helm/strlab-operator/Chart.yaml
 
-# 2. Build and push operator image
-docker build -t codedstreams/strlab-kube-operator:1.1.0 .
-docker push codedstreams/strlab-kube-operator:1.1.0
-docker tag  codedstreams/strlab-kube-operator:1.1.0 \
-            codedstreams/strlab-kube-operator:latest
-docker push codedstreams/strlab-kube-operator:latest
-
-# 3. Package and push Helm chart
-helm package helm/strlab-operator --destination charts/
-helm repo index charts/ --url https://coded-streams.github.io/strlab-kube-operator/charts
-git add charts/ && git commit -m "chore: release chart v1.1.0" && git push
-
-# 4. Also push as OCI artifact
-helm push charts/strlab-operator-1.1.0.tgz oci://ghcr.io/coded-streams/helm-charts
-
-# 5. Create GitHub release tag
-git tag v1.1.0 && git push origin v1.1.0
+# 2. Commit and tag — CI handles image build + helm publish automatically
+git add .
+git commit -m "chore: release v1.2.0"
+git tag v1.2.0
+git push origin main --tags
 ```
 
 ---
@@ -134,7 +96,7 @@ git tag v1.1.0 && git push origin v1.1.0
 
 ```bash
 # GitHub Pages
-helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
+helm repo add strlabstudio https://coded-streams.github.io/strlabstudio-operator/charts
 helm install strlab-operator strlabstudio/strlab-operator \
   --namespace strlab-system --create-namespace
 
