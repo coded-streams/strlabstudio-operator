@@ -11,7 +11,7 @@ keywords:
   - kubernetes
   - operator
   - strlabstudio
-home: https://github.com/coded-streams/strlab-kube-operator
+home: https://github.com/coded-streams/strlabstudio-operator
 maintainers:
   - name: Nestor A. A
     email: nestorabiawuh@gmail.com

@@ -27,7 +27,7 @@ The Str:::lab Studio Kube Operator watches for `StrlabStudio` custom resources a
 ### Install via Helm
 
 ```bash
-helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
+helm repo add strlabstudio https://coded-streams.github.io/strlabstudio-operator/charts
 helm repo update
 helm install strlab-operator strlabstudio/strlab-operator \
   --namespace strlab-system \
@@ -83,47 +83,6 @@ See [docs/CRD_REFERENCE.md](docs/CRD_REFERENCE.md) for full spec documentation.
 ---
 
 ## Project Structure
-
-```
-strlab-kube-operator/
-├── api/
-│   └── v1alpha1/
-│       └── types.py                     # CRD type definitions (Python dataclasses)
-├── controllers/
-│   └── strlabstudio_controller.py       # Reconciliation loop — kopf operator
-├── config/
-│   ├── crd/
-│   │   └── strlabstudios.yaml           # CRD manifest (applied to cluster)
-│   ├── manager/
-│   │   └── manager.yaml                 # Operator deployment manifest
-│   ├── rbac/
-│   │   └── rbac.yaml                    # ClusterRole + ClusterRoleBinding
-│   └── samples/
-│       ├── basic.yaml                   # Minimal StrlabStudio CR
-│       └── production.yaml              # Production CR with resources
-├── examples/
-│   ├── basic-instance.yaml              # Quick-start example
-│   └── production-instance.yaml         # Full production example
-├── helm/
-│   └── strlab-operator/
-│       ├── Chart.yaml                   # Helm chart metadata
-│       ├── values.yaml                  # Default values
-│       └── templates/
-│           └── all.yaml                 # All operator resources templated
-├── docs/
-│   ├── CRD_REFERENCE.md                 # Full CRD field reference
-│   ├── DEVELOPMENT.md                   # Local dev + testing guide
-│   ├── HOSTING.md                       # Helm chart hosting guide
-│   └── STORAGE.md                       # PVC / storage guide
-├── .github/
-│   └── workflows/
-│       └── publish.yml                  # Build and push operator image to Docker Hub
-├── Dockerfile                           # Operator container image
-├── requirements.txt                     # kopf, kubernetes-client, pydantic
-├── LICENSE
-└── README.md
-```
-
 ---
 
 ## How it works
@@ -170,7 +129,7 @@ kubectl get strlabstudio -A -w
 
 ### Option A — GitHub Pages (recommended)
 ```bash
-helm repo add strlabstudio https://coded-streams.github.io/strlab-kube-operator/charts
+helm repo add strlabstudio https://coded-streams.github.io/strlabstudio-operator/charts
 helm repo update
 helm install strlab-operator strlabstudio/strlab-operator \
   --namespace strlab-system --create-namespace
@@ -189,7 +148,7 @@ helm install strlab-operator ./helm/strlab-operator \
   --namespace strlab-system --create-namespace
 ```
 
-See [docs/HOSTING.md](docs/HOSTING.md) for the full guide including ArtifactHub, OLM/OperatorHub, and the release checklist.
+See [docs/HOSTING.md](docs/HOSTING.md) for the full guide including ArtifactHub and the release checklist.
 
 ---
 
@@ -207,7 +166,7 @@ kubectl get crd strlabstudios.codedstreams.io
 
 ```bash
 kubectl apply -f examples/basic-instance.yaml
-kubectl port-forward svc/strlab-studio-dev 3030:80 -n default
+kubectl port-forward svc/strlab-studio-my-studio 3030:80 -n flink
 # Open http://localhost:3030
 ```
 
