@@ -1,7 +1,7 @@
 image:
-  repository: codedstreams/strlab-kube-operator
+  repository: codedstreams/strlabstudio-operator
   tag: latest
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
 
 operatorNamespace: strlab-system
 
